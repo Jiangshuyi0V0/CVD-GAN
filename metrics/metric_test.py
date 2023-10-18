@@ -9,11 +9,11 @@ from torchvision import transforms
 from pytorch_msssim import ms_ssim, SSIM, MS_SSIM
 import torch
 from training.loss import StyleGAN2Loss
-from skimage.color import rgb2lab, lab2rgb
-from kornia.color import rgb_to_lab
-from cpr_utils import ssim
+# from skimage.color import rgb2lab, lab2rgb
+# from kornia.color import rgb_to_lab
+# from cpr_utils import ssim
 import pytorch_msssim
-from color_utils import colorInfoLoss
+# from color_utils import colorInfoLoss
 import os
 
 transform1 = transforms.Compose([
@@ -139,10 +139,8 @@ def all_tensor(imglist):
 
 
 def run_folder(folder):
-    org_img_folder = '/Volumes/SUYEE/result_image/' + folder
-
     # 检索文件
-    imglist = getFileList(org_img_folder, [], 'png')
+    imglist = getFileList(folder, [], 'png')
     res = all_tensor(imglist)
     res_sim = StyleGAN2Loss.run_Sim(res * 2 - 1, device='cpu', fix=True, cvd_type='DEUTAN', degree=1.0)
     ssim_val = pytorch_msssim.ssim(res, (res_sim + 1) / 2,
@@ -184,6 +182,7 @@ def run_res(imgList):
 
 
 def run_single(img):
+    """Test on single img"""
     im = np.asarray(PIL.Image.open(f'{img}.png').convert('RGB'))
     res = transform1(im).unsqueeze(0)
     res_sim = StyleGAN2Loss.run_Sim(res * 2 - 1, device='cpu', fix=True, cvd_type='PROTAN', degree=1.0)
@@ -203,7 +202,28 @@ def run_single(img):
     print('*' * 50)
 
 
-# run_single('2')
-# run_single('3')
-# run_res(['abstract_20', 'abstract_80'])
-run_folder('deutan/cvd_lvl_100')
+def get_sim(img, degree, cvd_type='PROTAN'):
+    """
+    Get the simulated image.
+    :param img: The image name
+    :param degree: The degree of CVD severity
+    :param cvd_type: The type of CVD
+    """
+    im = np.asarray(PIL.Image.open(f'{img}.png').convert('RGB'))
+    res = transform1(im).unsqueeze(0)
+    res_sim = StyleGAN2Loss.run_Sim(res * 2 - 1, device='cpu', fix=True, cvd_type=cvd_type, degree=degree)
+
+    res_inv = (res_sim + 1) / 2
+
+    transform2 = transforms.ToPILImage()
+    im_inv = transform2(res_inv.squeeze(0))
+
+    # Save the image
+    im_inv.save(f"{img}_sim_{degree}.png")
+
+
+# get_sim('extracted_sub_image', 0.5)
+
+# run_single('fakes_0')
+
+run_folder('test/')  # Please specify the path to the images here
